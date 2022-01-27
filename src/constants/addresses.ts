@@ -1,0 +1,21 @@
+import { Networks } from "./blockchain";
+
+const VIVIANI_TESTNET_SIDECHAIN = {
+    DEPLOYER_ADDRESS: "0x6CA656725809BB5600FC0e23076eaa5EdA1d2D03",
+    NFT_LOTTERY_TICKET_ADDRESS: "",
+    NFT_WINNER_TICKET_ADDRESS: "",
+    LOTTERY_ADDRESS: "",
+};
+
+const GOERLI_TESTNET = {
+    DEPLOYER_ADDRESS: "0x6CA656725809BB5600FC0e23076eaa5EdA1d2D03",
+    NFT_LOTTERY_TICKET_ADDRESS: "0xbad367270eC1F3E7AE5DCFE8e530F7eed94F1Bd6",
+    NFT_WINNER_TICKET_ADDRESS: "0x0d431C7123ccA03Afc9b5656665850dD9caA0F98",
+    LOTTERY_ADDRESS: "0x76fB67d13D3eAc0f6cBDA7d57522aBb5ea00Ade6",
+};
+
+export const getAddresses = (networkID: number) => {
+    if (networkID === Networks.VIVIANI) return VIVIANI_TESTNET_SIDECHAIN;
+    if (networkID === Networks.GOERLI) return GOERLI_TESTNET;
+    throw Error("Network don't support");
+};
