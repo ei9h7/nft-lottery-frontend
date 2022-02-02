@@ -17,6 +17,8 @@ export interface IAccount {
     drawLotteryTickets: BigNumber[];
     winner_tickets: IWinnerTicket[];
     win_percentage: number;
+    isClaimable: boolean;
+    amountDueToUser: number;
     balances: {
         lotteryTicket: number;
         winnerTicket: number;
@@ -32,6 +34,8 @@ const initialState: IAccount = {
         lotteryTicket: 0,
         winnerTicket: 0,
     },
+    amountDueToUser: 0,
+    isClaimable: false,
 };
 
 export interface IGetAccounts {
@@ -58,6 +62,8 @@ export const getAccount = createAsyncThunk("account/getAccount", async ({ addres
     const actualTicketId: BigNumber = await ticketNFTContract.getActualId();
 
     const lotteryTicketForTheDraw = allLotteryTickets.filter(token => parseInt(token.toString()) >= parseInt(lastTicketId.toString()));
+    const isRewardClaimable = await lotteryContract.isRewardClaimable(address);
+    const amountDueToUser = await lotteryContract.amountDueTo(address);
 
     const winnerNFTContract = new ethers.Contract(addresses.NFT_WINNER_TICKET_ADDRESS, NFTWinnerTicketContract, provider);
     const numberOfWinnerTicketOwned = await winnerNFTContract.balanceOf(address);
@@ -68,7 +74,9 @@ export const getAccount = createAsyncThunk("account/getAccount", async ({ addres
         allLotteryTickets: allLotteryTickets,
         drawLotteryTickets: lotteryTicketForTheDraw,
         winner_tickets: winnerTickets,
+        isClaimable: isRewardClaimable,
         win_percentage: lotteryTicketForTheDraw.length === 0 ? 0 : (lotteryTicketForTheDraw.length / (actualTicketId.toNumber() - lastTicketId.toNumber())) * 100,
+        amountDueToUser: amountDueToUser,
         balances: {
             lotteryTicket: lotteryTicketForTheDraw.length,
             winnerTicket: numberOfWinnerTicketOwned,
@@ -76,12 +84,12 @@ export const getAccount = createAsyncThunk("account/getAccount", async ({ addres
     };
 });
 
-interface IMintFFT {
+interface IInputTransaction {
     address: string;
     networkID: Networks;
     provider: StaticJsonRpcProvider | JsonRpcProvider;
 }
-export const mintLotteryTicket = createAsyncThunk("account/mintLotteryTicket", async ({ address, networkID, provider }: IMintFFT, { dispatch }) => {
+export const mintLotteryTicket = createAsyncThunk("account/mintLotteryTicket", async ({ address, networkID, provider }: IInputTransaction, { dispatch }) => {
     const addresses = getAddresses(networkID);
     const signer = provider.getSigner();
     const lotteryContract = new ethers.Contract(addresses.LOTTERY_ADDRESS, LotteryContract, signer);
@@ -100,7 +108,7 @@ export const mintLotteryTicket = createAsyncThunk("account/mintLotteryTicket", a
         await mintTransaction.wait();
         dispatch(success({ text: messages.transaction_sent }));
         dispatch(info({ text: messages.ticket_is_coming }));
-        await sleep(10);
+        await sleep(5);
         await dispatch(getAccount({ address, networkID, provider }));
         await dispatch(loadAppDetails({ networkID, provider }));
         dispatch(info({ text: messages.ticket_arrived }));
@@ -110,6 +118,39 @@ export const mintLotteryTicket = createAsyncThunk("account/mintLotteryTicket", a
     } finally {
         if (mintTransaction) {
             dispatch(clearPendingTxn(mintTransaction.hash));
+        }
+    }
+});
+
+export const claimRewards = createAsyncThunk("account/claimRewards", async ({ address, networkID, provider }: IInputTransaction, { dispatch }) => {
+    const addresses = getAddresses(networkID);
+    const signer = provider.getSigner();
+    const lotteryContract = new ethers.Contract(addresses.LOTTERY_ADDRESS, LotteryContract, signer);
+    let claimRewardsTransaction;
+    try {
+        const gasPrice = await getGasPrice(provider);
+
+        claimRewardsTransaction = await lotteryContract.claim({ value: gasPrice });
+        dispatch(
+            fetchPendingTxns({
+                txnHash: claimRewardsTransaction.hash,
+                text: "Claiming rewards",
+                type: "claiming_rewards",
+            }),
+        );
+        await claimRewardsTransaction.wait();
+        dispatch(success({ text: messages.transaction_sent }));
+        dispatch(info({ text: messages.claiming_rewards }));
+        await sleep(5);
+        await dispatch(getAccount({ address, networkID, provider }));
+        await dispatch(loadAppDetails({ networkID, provider }));
+        dispatch(info({ text: messages.claiming_arrived }));
+        return;
+    } catch (err: any) {
+        return metamaskErrorWrap(err, dispatch);
+    } finally {
+        if (claimRewardsTransaction) {
+            dispatch(clearPendingTxn(claimRewardsTransaction.hash));
         }
     }
 });

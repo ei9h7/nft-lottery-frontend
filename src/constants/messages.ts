@@ -6,4 +6,6 @@ export const messages = {
     please_connect_wallet: "Please connect your wallet.",
     something_wrong: "Something went wrong",
     switch_to_viviani: "Switch to the Viviani network?",
+    claiming_rewards: "Your claimable rewards are on their ways",
+    claiming_arrived: "Your claimable rewards just arrived",
 };

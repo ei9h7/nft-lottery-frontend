@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAddresses } from "src/constants";
 import { shortenEnd, shortenMiddle, shortenPercentage } from "src/helpers";
 import { useWeb3Context } from "src/hooks";
-import { mintLotteryTicket } from "src/store/slices/account-slice";
+import { claimRewards, mintLotteryTicket } from "src/store/slices/account-slice";
 import { startLottery } from "src/store/slices/app-slice";
 import { IPendingTxn, isPendingTxn } from "src/store/slices/pending-txns-slice";
 import { IReduxState } from "src/store/slices/state.interface";
@@ -18,10 +18,11 @@ function Home() {
     });
     const ticketNFTBalance = useSelector<IReduxState, number>(state => state.account.balances.lotteryTicket);
     const winPercentage = useSelector<IReduxState, number>(state => state.account.win_percentage);
+    const isRewardClaimable = useSelector<IReduxState, boolean>(state => state.account.isClaimable);
+    const amountDueToUser = useSelector<IReduxState, number>(state => state.account.amountDueToUser);
 
     const ETHlotteryBalance = useSelector<IReduxState, string>(state => state.app.drawBalanceInETH);
     const USDlotteryBalance = useSelector<IReduxState, number>(state => state.app.drawBalanceInUSD);
-
     const numberOfTicketInTheDraw = useSelector<IReduxState, number>(state => state.app.numberOfOwnerForTheDraw);
 
     async function onMintNFT() {
@@ -32,6 +33,11 @@ function Home() {
     async function onStartLottery() {
         if (await checkWrongNetwork()) return;
         dispatch(startLottery({ provider: provider, networkID: chainID, address: address }));
+    }
+
+    async function onClaimRewards() {
+        if (await checkWrongNetwork()) return;
+        dispatch(claimRewards({ provider: provider, networkID: chainID, address: address }));
     }
 
     let startLotteryButton;
@@ -60,7 +66,7 @@ function Home() {
                 </Grid>
             </Grid>
 
-            <Grid container justifyContent="center">
+            <Grid item justifyContent="center" lg={12} md={12} sm={12} xs={12}>
                 <Card className="card-home">
                     <Grid spacing={2} container>
                         <Grid item lg={6} md={6} sm={6} xs={12}>
@@ -73,7 +79,7 @@ function Home() {
                         </Grid>
                         <Grid item lg={6} md={6} sm={6} xs={12}>
                             <p className="home-card-title">Total ETH deposit</p>
-                            <p className="home-card-value">{shortenEnd(ETHlotteryBalance.toString())}</p>
+                            <p className="home-card-value">{shortenEnd(ETHlotteryBalance.toString()) + " ETH"}</p>
                         </Grid>
                         <Grid item lg={6} md={6} sm={6} xs={12}>
                             <p className="home-card-title">Last winner</p>
@@ -84,14 +90,18 @@ function Home() {
                         </Grid>
                         <Grid item lg={6} md={6} sm={6} xs={12}>
                             <p className="home-card-title">Total USD deposit</p>
-                            <p className="home-card-value">{shortenEnd(USDlotteryBalance.toString())}</p>
+                            <p className="home-card-value">{shortenEnd(USDlotteryBalance.toString()) + "$"}</p>
                         </Grid>
 
                         <Grid item lg={6} md={6} sm={6} xs={12}>
                             <p className="home-card-title">Win rate </p>
                             <p className="home-card-value">{shortenPercentage(winPercentage.toString()) + "%"}</p>
                         </Grid>
-                        <Grid item lg={12}>
+                        <Grid item lg={12} md={12} sm={12} xs={12}>
+                            <p className="home-card-title">Claimable rewards </p>
+                            <p className="home-card-value">{shortenEnd(amountDueToUser.toString()) + " ETH"}</p>
+                        </Grid>
+                        <Grid item lg={12} md={12} sm={12} xs={12}>
                             <Grid container justifyContent="space-evenly">
                                 <Grid item>
                                     <Button
@@ -107,6 +117,20 @@ function Home() {
                                 </Grid>
 
                                 {startLotteryButton}
+
+                                <Grid item>
+                                    <Button
+                                        onClick={async () => {
+                                            if (isPendingTxn(pendingTransactions, "claim_rewards")) return;
+                                            await onClaimRewards();
+                                        }}
+                                        className="action-button"
+                                        disabled={!isRewardClaimable}
+                                        variant="contained"
+                                    >
+                                        Claim rewards
+                                    </Button>
+                                </Grid>
                             </Grid>
                         </Grid>
                     </Grid>

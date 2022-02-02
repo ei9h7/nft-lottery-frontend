@@ -17,6 +17,7 @@
         width: 80%;
         max-width: 800px;
         padding: 20px;
+        margin: auto;
 
         @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
             background: #37434b00;
@@ -64,6 +65,10 @@
             text-align: center;
             margin-top: 20px;
             padding: 20px 40px 20px 40px;
+        }
+
+        .action-button:disabled {
+            background-color: gray;
         }
     }
 }
