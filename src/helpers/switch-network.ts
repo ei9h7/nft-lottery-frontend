@@ -17,11 +17,11 @@ const addChainRequest = () => {
                     symbol: "ETH",
                     decimals: 18,
                 },
-                rpcUrls: ["https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"],
+                rpcUrls: ["https://goerli.infura.io/v3/ff5fcf5f0d404ecab04250c349f1afed"],
                 blockExplorerUrls: ["https://goerli.etherscan.io"],
             },
             {
-                chainId: "0x85",
+                chainId: "0x133",
                 chainName: "iExec Test Sidechain",
                 nativeCurrency: {
                     name: "xRLC",
