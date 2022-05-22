@@ -56,7 +56,7 @@ function Home() {
         <Grid className="home-page" container>
             <Grid container>
                 <Grid xs={12} item>
-                    <h1 className="title">iExec Lottery</h1>
+                    <h1 className="title">NFT Lottery</h1>
                 </Grid>
             </Grid>
 
